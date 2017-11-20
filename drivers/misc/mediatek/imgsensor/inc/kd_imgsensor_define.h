@@ -369,6 +369,8 @@ typedef struct {
     MUINT8 SensorHightSampling;
     MUINT8 SensorPacketECCOrder;
     SENSOR_MIPI_TYPE_ENUM MIPIsensorType;
+  MUINT16  SensorHorFOV;
+  MUINT16  SensorVerFOV;
     MUINT8 SensorCaptureOutputJPEG; /* JPEG file or not? */
     MUINT8 SensorModeNum;
     MUINT8 IHDR_Support;

@@ -24,7 +24,7 @@
 	 
 #include <linux/ioctl.h>
 	 
-#define KXTIK1004_I2C_SLAVE_ADDR		0x1E
+#define KXTIK1004_I2C_SLAVE_ADDR		0x1C
 	 
  /* KXTIK1004 Register Map  (Please refer to KXTIK1004 Specifications) */
 #define KXTIK1004_REG_DEVID			0x0F

@@ -394,14 +394,9 @@ config MTK_TOUCHPANEL # TOUCHSCREEN_MT6516 TOUCHSCREEN_MT6573
           If unsure, say N.
 	
 # Touch panel
-config TOUCHSCREEN_MTK_EKTF2136
-	bool "EKTF2136 for Mediatek package"
-	depends on TOUCHSCREEN_MTK
-
 config MTK_GT9XX
         bool "GT9XX for Mediatek package"
         default n
-
 config MTK_FT5406
         bool "FT5406 for Mediatek package"
         default n

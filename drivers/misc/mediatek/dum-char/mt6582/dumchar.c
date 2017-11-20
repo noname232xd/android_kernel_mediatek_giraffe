@@ -1030,6 +1030,7 @@ int dumchar_probe(struct platform_device *dev)
 		}
 	}
 
+
 #ifdef CONFIG_MTK_EMMC_SUPPORT
     emmc_create_symlink();
 #endif

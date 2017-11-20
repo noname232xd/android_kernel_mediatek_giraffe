@@ -48,11 +48,3 @@ endif
 ifeq ($(CONFIG_MTK_BMA250E),y)
 obj-y   +=  bma250e/
 endif
-
-ifeq ($(CONFIG_MTK_KXCJK_1013_AUTO),y)
-obj-y   +=  kxcjk_1013_auto/
-endif
-
-ifeq ($(CONFIG_MTK_LIS3DH_AUTO),y)
-obj-y   +=  lis3dh_auto/
-endif

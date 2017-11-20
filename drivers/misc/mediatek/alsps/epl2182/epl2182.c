@@ -43,6 +43,11 @@
 #include <linux/earlysuspend.h>
 #include <linux/wakelock.h>
 #include <linux/sched.h>
+
+#ifdef CONFIG_NASA_PROXIMITY
+#include <linux/nasa_proximity.h>
+#endif
+
 /******************************************************************************
  * extern functions
 *******************************************************************************/
@@ -510,7 +515,34 @@ static int set_psensor_intr_threshold(uint16_t low_thd, uint16_t high_thd)
     return ret;
 }
 
+#ifdef CONFIG_NASA_PROXIMITY
+int epl2182_proximity_check(void)
+{
+	int ps_val;
 
+	struct epl2182_priv *obj = epl2182_obj;
+	
+	if(obj == NULL)
+	{
+		APS_DBG("[epl2182] epl2182_obj is NULL!");
+		return 0;
+	}
+	else
+	{
+		elan_epl2182_psensor_enable(obj, 1);
+
+		msleep(1);
+
+		ps_val = gRawData.ps_state;
+
+		APS_DBG("[epl2182] %s ps_val = %d\n", __func__, ps_val);
+
+		elan_epl2182_psensor_enable(obj, 0);
+
+		return (ps_val);
+	}
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 static void epl2182_dumpReg(struct i2c_client *client)
@@ -828,6 +860,7 @@ static ssize_t epl2182_show_reg(struct device_driver *ddri, char *buf)
 {
 	struct i2c_client *client = NULL;
     ssize_t len = 0;
+
     if(!epl2182_obj)
     {
         APS_ERR("epl2182_obj is null!!\n");
@@ -1886,9 +1919,9 @@ static int epl2182_probe(struct platform_device *pdev)
         APS_ERR("add driver error\n");
         return -1;
     }
+
     return 0;
 }
-
 
 
 /*----------------------------------------------------------------------------*/
@@ -1933,7 +1966,7 @@ static struct platform_driver epl2182_alsps_driver =
 		.name = "als_ps",
         #ifdef CONFIG_OF
 		.of_match_table = alsps_of_match,
-		#endif
+	#endif
 	}
 };
 /*----------------------------------------------------------------------------*/

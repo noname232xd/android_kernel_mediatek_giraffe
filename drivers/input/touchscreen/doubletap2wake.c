@@ -1,26 +1,3 @@
-/*
- * drivers/input/touchscreen/doubletap2wake.c
- *
- *
- * Copyright (c) 2013, Dennis Rassmann <showp1984@gmail.com>
- * Copyright (c) 2015, Vineeth Raj <contact.twn@openmailbox.org>
- * Copyright (c) 2015, Levin Calado <levincalado@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -52,25 +29,16 @@
 #define ANDROID_TOUCH_DECLARED
 #endif
 
-/* Pocket_Mod Support */
-#ifdef CONFIG_POCKETMOD
-#include <linux/pocket_mod.h>
+#ifdef CONFIG_NASA_PROXIMITY
+#include <linux/nasa_proximity.h>
 #endif
 
-/* Version, author, desc, etc */
-#define DRIVER_AUTHOR "Dennis Rassmann <showp1984@gmail.com>"
-#define DRIVER_DESCRIPTION "Doubletap2wake for almost any device"
 #define DRIVER_VERSION "1.0"
 #define LOGTAG "[doubletap2wake]: "
 
-MODULE_AUTHOR(DRIVER_AUTHOR);
-MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
-MODULE_VERSION(DRIVER_VERSION);
-MODULE_LICENSE("GPLv2");
-
 /* Tuneables */
 #define DT2W_DEBUG         0
-#define DT2W_DEFAULT       0
+#define DT2W_DEFAULT       1
 
 #define DT2W_PWRKEY_DUR   60
 #define DT2W_FEATHER      50
@@ -83,11 +51,13 @@ static int touch_x = 0, touch_y = 0, touch_nr = 0, x_pre = 0, y_pre = 0;
 static bool touch_x_called = false, touch_y_called = false, touch_cnt = true;
 static bool exec_count = true;
 bool dt2w_scr_suspended = false;
+
 #ifndef WAKE_HOOKS_DEFINED
 #ifndef CONFIG_HAS_EARLYSUSPEND
 static struct notifier_block dt2w_lcd_notif;
 #endif
 #endif
+
 static struct input_dev * doubletap2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 static struct workqueue_struct *dt2w_input_wq;
@@ -197,8 +167,8 @@ static void detect_doubletap2wake(int x, int y, bool st)
 }
 
 static void dt2w_input_callback(struct work_struct *unused) {
-	#ifdef CONFIG_POCKETMOD
-	if (device_is_pocketed()){
+	#ifdef CONFIG_NASA_PROXIMITY
+	if (ps_is_close()){
 		return;
 	}
 	else
@@ -419,10 +389,10 @@ static DEVICE_ATTR(doubletap2wake_version, (S_IWUSR|S_IRUGO),
  * INIT / EXIT stuff below here
  */
 #ifdef ANDROID_TOUCH_DECLARED
-extern struct kobject *android_touch_kobj;
+extern struct kobject *nasa_kobj;
 #else
-struct kobject *android_touch_kobj;
-EXPORT_SYMBOL_GPL(android_touch_kobj);
+struct kobject *nasa_kobj;
+EXPORT_SYMBOL_GPL(nasa_kobj);
 #endif
 static int __init doubletap2wake_init(void)
 {
@@ -450,16 +420,16 @@ static int __init doubletap2wake_init(void)
 #endif
 
 #ifndef ANDROID_TOUCH_DECLARED
-	android_touch_kobj = kobject_create_and_add("android_touch", NULL) ;
-	if (android_touch_kobj == NULL) {
-		pr_warn("%s: android_touch_kobj create_and_add failed\n", __func__);
+	nasa_kobj = kobject_create_and_add("nasa", NULL) ;
+	if (nasa_kobj == NULL) {
+		pr_warn("%s: nasa_kobj create_and_add failed\n", __func__);
 	}
 #endif
-	rc = sysfs_create_file(android_touch_kobj, &dev_attr_doubletap2wake.attr);
+	rc = sysfs_create_file(nasa_kobj, &dev_attr_doubletap2wake.attr);
 	if (rc) {
 		pr_warn("%s: sysfs_create_file failed for doubletap2wake\n", __func__);
 	}
-	rc = sysfs_create_file(android_touch_kobj, &dev_attr_doubletap2wake_version.attr);
+	rc = sysfs_create_file(nasa_kobj, &dev_attr_doubletap2wake_version.attr);
 	if (rc) {
 		pr_warn("%s: sysfs_create_file failed for doubletap2wake_version\n", __func__);
 	}
@@ -470,7 +440,7 @@ static int __init doubletap2wake_init(void)
 static void __exit doubletap2wake_exit(void)
 {
 #ifndef ANDROID_TOUCH_DECLARED
-	kobject_del(android_touch_kobj);
+	kobject_del(nasa_kobj);
 #endif
 #ifndef WAKE_HOOKS_DEFINED
 #ifndef CONFIG_HAS_EARLYSUSPEND

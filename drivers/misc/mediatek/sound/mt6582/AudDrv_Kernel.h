@@ -296,6 +296,9 @@ int        Auddrv_Flush_counter  = 0;
 // here is temp address for ioremap audio hardware regisster
 void *AFE_BASE_ADDRESS = 0;
 void *AFE_SRAM_ADDRESS = 0;
+void *AFE_AWB_SRAM_ADDRESS = 0;
+
+#define AWB_BUFFER_BASE  (0x2000)
 
 #endif
 

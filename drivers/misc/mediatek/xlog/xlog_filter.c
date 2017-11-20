@@ -269,7 +269,6 @@ long xlog_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 static struct file_operations xlog_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = xlog_ioctl,
-	.compat_ioctl = xlog_ioctl,
 	.mmap = xlog_mmap,
 	.open = xlog_open,
 	.release = xlog_release,
@@ -310,7 +309,6 @@ static const struct file_operations proc_xlog_filter_operations = {
 static const struct file_operations proc_xlog_setfil_operations = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = xlog_ioctl,
-	.compat_ioctl = xlog_ioctl,
 	.mmap = xlog_mmap,
 	.open = xlog_open,
 	.release = xlog_release,

@@ -1,5 +1,5 @@
 ifeq ($(CONFIG_MTK_COMBO),y)
-PLAT := alps
+PLAT := nasa
 obj-y	+= $(PLAT)/
 
 endif

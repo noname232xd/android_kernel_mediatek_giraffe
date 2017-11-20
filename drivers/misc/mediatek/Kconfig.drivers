@@ -990,10 +990,6 @@ config MTK_AUDIO_EXTCODEC_SUPPORT
 	  If you say Y, enable MTK_AUDIO_EXTCODEC_SUPPORT driver.
 
 # ALSPS sensor
-config MTK_TMD2772_AUTO
-	bool "TMD2772_AUTO for MediaTek package"
-	default n
-
 config MTK_CM36283
 	bool "CM36283 for MediaTek package"
 	default n
@@ -1035,14 +1031,6 @@ config MTK_APDS9930_NEW
 	default n
 
 # Accelerometer sensor
-config MTK_KXCJK_1013_AUTO
-	bool "KXCJK_1013_AUTO for MediaTek package"
-	default n
-
-config MTK_LIS3DH_AUTO
-	bool "LIS3DH_AUTO for MediaTek package"
-	default n
-
 config MTK_KXTJ2_1009
 	bool "KXTJ2 1009 for MediaTek package"
 	default n
@@ -1108,14 +1096,6 @@ config MTK_MPU3050C_NEW
         default n
 
 # Magnet sensor
-config MTK_MMC3516X_AUTO
-	bool "MMC3516X_AUTO for MediaTek package"
-	default n
-
-config MTK_ST480_AUTO
-	bool "ST480_AUTO for MediaTek package"
-	default n
-
 config MTK_AKM8963
 	bool "AKM8963 for MediaTek package"
 	default n

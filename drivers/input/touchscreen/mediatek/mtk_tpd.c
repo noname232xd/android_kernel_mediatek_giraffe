@@ -45,7 +45,7 @@
 
 #define TPD_GET_VELOCITY_CUSTOM_X _IO(TOUCH_IOC_MAGIC, 0)
 #define TPD_GET_VELOCITY_CUSTOM_Y _IO(TOUCH_IOC_MAGIC, 1)
-#define TPD_GET_FILTER_PARA _IOWR(TOUCH_IOC_MAGIC,2,struct tpd_filter_t) 
+#define TPD_GET_FILTER_PARA _IOWR(TOUCH_IOC_MAGIC,2,struct tpd_filter_t)
 
 
 
@@ -178,6 +178,7 @@ extern void tpd_resume(struct early_suspend *h);
 void (*nyx_suspend) (struct early_suspend *h);
 void (*nyx_resume) (struct early_suspend *h);
 #endif
+
 extern void tpd_button_init(void);
 
 /* int tpd_load_status = 0; //0: failed, 1: sucess */

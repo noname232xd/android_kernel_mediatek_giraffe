@@ -19,6 +19,12 @@
 
 /*kpd.h file path: ALPS/mediatek/kernel/include/linux */
 #include <linux/kpd.h>
+#include <mach/hal_priv_kpd.h>
+#ifdef CONFIG_OF
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
+#endif
 
 #ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
@@ -79,6 +85,13 @@ static int kpd_pdrv_suspend(struct platform_device *pdev, pm_message_t state);
 static int kpd_pdrv_resume(struct platform_device *pdev);
 #endif
 
+#ifdef CONFIG_OF
+static const struct of_device_id kpd_of_match[] = {
+	{ .compatible = "mediatek,KP", },
+	{},
+};
+#endif
+
 static struct platform_driver kpd_pdrv = {
 	.probe = kpd_pdrv_probe,
 	.remove = kpd_pdrv_remove,
@@ -89,6 +102,9 @@ static struct platform_driver kpd_pdrv = {
 	.driver = {
 		.name = KPD_NAME,
 		.owner = THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = kpd_of_match,
+#endif
 	},
 };
 
@@ -453,13 +469,21 @@ static void kpd_keymap_handler(unsigned long data)
 
 	memcpy(kpd_keymap_state, new_state, sizeof(new_state));
 	kpd_print("save new keymap state\n");
+#ifdef CONFIG_OF
+	enable_irq(kp_irqnr);
+#else
 	enable_irq(MT_KP_IRQ_ID);
+#endif
 }
 
 static irqreturn_t kpd_irq_handler(int irq, void *dev_id)
 {
 	/* use _nosync to avoid deadlock */
+#ifdef CONFIG_OF
+	disable_irq_nosync(kp_irqnr);
+#else
 	disable_irq_nosync(MT_KP_IRQ_ID);
+#endif
 	tasklet_schedule(&kpd_keymap_tasklet);
 	return IRQ_HANDLED;
 }
@@ -791,6 +815,21 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 	int i, r;
 	int err = 0;
 
+#ifdef CONFIG_OF
+	kp_base = of_iomap(pdev->dev.of_node, 0);
+	if (!kp_base) {
+		pr_info(KPD_SAY "KP iomap failed\n");
+		return -ENODEV;
+	};
+
+	kp_irqnr = irq_of_parse_and_map(pdev->dev.of_node, 0);
+	if (!kp_irqnr) {
+		pr_info(KPD_SAY "KP get irqnr failed\n");
+		return -ENODEV;
+	}
+	pr_info(KPD_SAY "kp base: 0x%p  kp irq: %d\n", kp_base, kp_irqnr);
+#endif
+
 	kpd_ldvt_test_init();	/* API 2 for kpd LFVT test enviroment settings */
 
 	/* initialize and register input device (/dev/input/eventX) */
@@ -871,14 +910,20 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 
 	/* register IRQ and EINT */
 	kpd_set_debounce(KPD_KEY_DEBOUNCE);
+#ifdef CONFIG_OF
+	r = request_irq(kp_irqnr, kpd_irq_handler, IRQF_TRIGGER_NONE, KPD_NAME, NULL);
+#else
 	r = request_irq(MT_KP_IRQ_ID, kpd_irq_handler, IRQF_TRIGGER_FALLING, KPD_NAME, NULL);
+#endif
 	if (r) {
 		printk(KPD_SAY "register IRQ failed (%d)\n", r);
 		misc_deregister(&kpd_dev);
 		input_unregister_device(kpd_input_dev);
 		return r;
 	}
+#if KPD_PWRKEY_USE_EINT
 	mt_eint_register();
+#endif
 
 #ifndef KPD_EARLY_PORTING	/*add for avoid early porting build err the macro is defined in custom file */
 	long_press_reboot_function_setting();	/* /API 4 for kpd long press reboot function setting */

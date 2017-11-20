@@ -1,25 +1,3 @@
-/*
- * drivers/input/touchscreen/sweep2wake.c
- *
- *
- * Copyright (c) 2013, Dennis Rassmann <showp1984@gmail.com>
- * Copyright (c) 2015, Vineeth Raj <contact.twn@openmailbox.org>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -41,72 +19,32 @@
 #include <linux/earlysuspend.h>
 #endif
 #endif
-
-/* Pocket_Mod Support */
-#ifdef CONFIG_POCKETMOD
-#include <linux/pocket_mod.h>
+/*
+#ifdef CONFIG_NASA_PROXIMITY
+#include <linux/nasa_proximity.h>
 #endif
-
+*/
 /* uncomment since no touchscreen defines android touch, do that here */
 //#define ANDROID_TOUCH_DECLARED
 
-/* Version, author, desc, etc */
-#define DRIVER_AUTHOR "Dennis Rassmann <showp1984@gmail.com>"
-#define DRIVER_DESCRIPTION "Sweep2wake for almost any device"
 #define DRIVER_VERSION "1.5"
 #define LOGTAG "[sweep2wake]: "
 
-MODULE_AUTHOR(DRIVER_AUTHOR);
-MODULE_DESCRIPTION(DRIVER_DESCRIPTION);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPLv2");
 
 /* Tuneables */
 #define S2W_DEBUG             0
-#define S2W_DEFAULT           0
-#define S2W_S2SONLY_DEFAULT   0
+#define S2W_DEFAULT           1
+#define S2W_S2SONLY_DEFAULT   1
 #define S2W_PWRKEY_DUR       60
 
-#ifdef CONFIG_MACH_MSM8974_HAMMERHEAD
-/* Hammerhead aka Nexus 5 */
-#define S2W_Y_MAX               1920
-#define S2W_X_MAX               1080
-#define S2W_Y_LIMIT             S2W_Y_MAX-130
-#define S2W_X_B1                400
-#define S2W_X_B2                700
-#define S2W_X_FINAL             250
-#elif defined(CONFIG_MACH_APQ8064_MAKO)
-/* Mako aka Nexus 4 */
-#define S2W_Y_LIMIT             2350
-#define S2W_X_MAX               1540
-#define S2W_X_B1                500
-#define S2W_X_B2                1000
-#define S2W_X_FINAL             300
-#elif defined(CONFIG_MACH_APQ8064_FLO)
-/* Flo/Deb aka Nexus 7 2013 */
-#define S2W_Y_MAX               2240
-#define S2W_X_MAX               1344
-#define S2W_Y_LIMIT             S2W_Y_MAX-110
-#define S2W_X_B1                500
-#define S2W_X_B2                700
-#define S2W_X_FINAL             450
-/* assume sprout */
-#elif defined(CONFIG_ARCH_MTK_PROJECT)
-#define S2W_Y_MAX               854
-#define S2W_X_MAX               480
-#define S2W_Y_LIMIT             S2W_Y_MAX-70
-#define S2W_X_B1                120
-#define S2W_X_B2                240
-#define S2W_X_FINAL             120
-#else
-/* defaults */
-#define S2W_Y_LIMIT             2350
-#define S2W_X_MAX               1540
-#define S2W_X_B1                500
-#define S2W_X_B2                1000
-#define S2W_X_FINAL             300
-#endif
-
+#define S2W_Y_MAX               854 // bottom border
+#define S2W_Y_MIN               0 // upper border
+#define S2W_X_MAX               480 // right border
+#define S2W_X_MIN               0 // left border
+#define S2W_X_B1                60 // left border trigger
+#define S2W_X_B2                420 // right border trigger
 
 /* Resources */
 int s2w_switch = S2W_DEFAULT, s2w_s2sonly = S2W_S2SONLY_DEFAULT;
@@ -187,29 +125,30 @@ static void detect_sweep2wake(int x, int y, bool st)
 #endif
 	//left->right
 	if ((single_touch) && (s2w_scr_suspended == true) && (s2w_switch > 0 && !s2w_s2sonly)) {
-		prevx = 0;
+		prevx = S2W_X_MIN;
 		nextx = S2W_X_B1;
 		if ((barrier[0] == true) ||
 		   ((x > prevx) &&
 		    (x < nextx) &&
-		    (y > 0))) {
+		    (y > S2W_Y_MIN) &&
+		    (y < S2W_Y_MAX))) {
 			prevx = nextx;
 			nextx = S2W_X_B2;
 			barrier[0] = true;
 			if ((barrier[1] == true) ||
 			   ((x > prevx) &&
 			    (x < nextx) &&
-			    (y > 0))) {
+			    (y > S2W_Y_MIN) &&
+			    (y < S2W_Y_MAX))) {
 				prevx = nextx;
 				barrier[1] = true;
 				if ((x > prevx) &&
-				    (y > 0)) {
-					if (x > (S2W_X_MAX - S2W_X_FINAL)) {
+				    (y > S2W_Y_MIN) &&
+				    (y < S2W_Y_MAX)) {
 						if (exec_count) {
 							pr_info(LOGTAG"ON\n");
 							sweep2wake_pwrtrigger();
 							exec_count = false;
-						}
 					}
 				}
 			}
@@ -217,29 +156,30 @@ static void detect_sweep2wake(int x, int y, bool st)
 	//right->left
 	} else if ((single_touch) && (s2w_scr_suspended == false) && (s2w_switch > 0)) {
 		scr_on_touch=true;
-		prevx = (S2W_X_MAX - S2W_X_FINAL);
+		prevx = (S2W_X_MAX);
 		nextx = S2W_X_B2;
 		if ((barrier[0] == true) ||
 		   ((x < prevx) &&
 		    (x > nextx) &&
-		    (y > S2W_Y_LIMIT))) {
+		    (y > S2W_Y_MIN) &&
+		    (y < S2W_Y_MAX))) {
 			prevx = nextx;
 			nextx = S2W_X_B1;
 			barrier[0] = true;
 			if ((barrier[1] == true) ||
 			   ((x < prevx) &&
 			    (x > nextx) &&
-			    (y > S2W_Y_LIMIT))) {
+			    (y > S2W_Y_MIN) &&
+			    (y < S2W_Y_MAX))) {
 				prevx = nextx;
 				barrier[1] = true;
 				if ((x < prevx) &&
-				    (y > S2W_Y_LIMIT)) {
-					if (x < S2W_X_FINAL) {
+				    (y > S2W_Y_MIN) &&
+				    (y < S2W_Y_MAX)) {
 						if (exec_count) {
 							pr_info(LOGTAG"OFF\n");
 							sweep2wake_pwrtrigger();
 							exec_count = false;
-						}
 					}
 				}
 			}
@@ -248,12 +188,14 @@ static void detect_sweep2wake(int x, int y, bool st)
 }
 
 static void s2w_input_callback(struct work_struct *unused) {
-	#ifdef CONFIG_POCKETMOD
-	if (device_is_pocketed()){
+/*
+	#ifdef CONFIG_NASA_PROXIMITY
+	if (ps_is_close()){
 		return;
 	}
 	else
 	#endif
+*/
 	detect_sweep2wake(touch_x, touch_y, true);
 
 	return;
@@ -495,10 +437,10 @@ static DEVICE_ATTR(sweep2wake_version, (S_IWUSR|S_IRUGO),
  * INIT / EXIT stuff below here
  */
 #ifdef ANDROID_TOUCH_DECLARED
-extern struct kobject *android_touch_kobj;
+extern struct kobject *nasa_kobj;
 #else
-struct kobject *android_touch_kobj;
-EXPORT_SYMBOL_GPL(android_touch_kobj);
+struct kobject *nasa_kobj;
+EXPORT_SYMBOL_GPL(nasa_kobj);
 #endif
 static int __init sweep2wake_init(void)
 {
@@ -526,20 +468,20 @@ static int __init sweep2wake_init(void)
 #endif
 
 #ifndef ANDROID_TOUCH_DECLARED
-	android_touch_kobj = kobject_create_and_add("android_touch", NULL) ;
-	if (android_touch_kobj == NULL) {
-		pr_warn("%s: android_touch_kobj create_and_add failed\n", __func__);
+	nasa_kobj = kobject_create_and_add("nasa", NULL) ;
+	if (nasa_kobj == NULL) {
+		pr_warn("%s: nasa_kobj create_and_add failed\n", __func__);
 	}
 #endif
-	rc = sysfs_create_file(android_touch_kobj, &dev_attr_sweep2wake.attr);
+	rc = sysfs_create_file(nasa_kobj, &dev_attr_sweep2wake.attr);
 	if (rc) {
 		pr_warn("%s: sysfs_create_file failed for sweep2wake\n", __func__);
 	}
-	rc = sysfs_create_file(android_touch_kobj, &dev_attr_s2w_s2sonly.attr);
+	rc = sysfs_create_file(nasa_kobj, &dev_attr_s2w_s2sonly.attr);
 	if (rc) {
 		pr_warn("%s: sysfs_create_file failed for s2w_s2sonly\n", __func__);
 	}
-	rc = sysfs_create_file(android_touch_kobj, &dev_attr_sweep2wake_version.attr);
+	rc = sysfs_create_file(nasa_kobj, &dev_attr_sweep2wake_version.attr);
 	if (rc) {
 		pr_warn("%s: sysfs_create_file failed for sweep2wake_version\n", __func__);
 	}
@@ -550,7 +492,7 @@ static int __init sweep2wake_init(void)
 static void __exit sweep2wake_exit(void)
 {
 #ifndef ANDROID_TOUCH_DECLARED
-	kobject_del(android_touch_kobj);
+	kobject_del(nasa_kobj);
 #endif
 #ifndef WAKE_HOOKS_DEFINED
 #ifndef CONFIG_HAS_EARLYSUSPEND
@@ -565,3 +507,5 @@ static void __exit sweep2wake_exit(void)
 module_init(sweep2wake_init);
 module_exit(sweep2wake_exit);
 
+MODULE_DESCRIPTION("Sweep2wake");
+MODULE_LICENSE("GPLv2");

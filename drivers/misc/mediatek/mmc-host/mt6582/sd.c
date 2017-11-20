@@ -1536,9 +1536,6 @@ static void msdc_sd_power(struct msdc_host *host,u32 on)
             msdc_ldo_power(on, MT6323_POWER_LDO_VMC, VOL_3300, &g_msdc1_io);
             //msdc_set_enio18(host,0);
             //msdc_ldo_power(on, MT65XX_POWER_LDO_VMCH1, VOL_3300, &g_msdc1_flash);
-	    #if (CUST_EINT_MSDC1_INS_TYPE == CUST_EINTF_TRIGGER_HIGH)
-            if(on)
-            #endif
             msdc_ldo_power(on, MT6323_POWER_LDO_VMCH, VOL_3300, &g_msdc1_flash);
             break;
 #if (0 == REMOVEED_FOR_MT6582)
